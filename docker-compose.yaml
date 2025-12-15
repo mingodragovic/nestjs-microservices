@@ -1,0 +1,96 @@
+# Docker Compose - EventFlow Development Environment
+
+services:
+  # ============================================
+  # INFRASTRUCTURE
+  # ============================================
+
+  # Zookeeper (required for Kafka)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: eventflowapp-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper-data:/var/lib/zookeeper/data
+      - zookeeper-logs:/var/lib/zookeeper/log
+
+  # Kafka Message Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: eventflowapp-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9093:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+
+  # Kafka UI (optional - for debugging)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: eventflowapp-kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: eventflowapp
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: eventflowapp-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: eventflowapp
+      POSTGRES_PASSWORD: eventflow_password
+      POSTGRES_DB: eventflowapp
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # Redis (for caching/sessions - optional)
+  redis:
+    image: redis:7-alpine
+    container_name: eventflow-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+
+  # ============================================
+  # DEVELOPMENT TOOLS
+  # ============================================
+
+  # Mailhog (email testing)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: eventflow-mailhog
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
+
+volumes:
+  zookeeper-data:
+  zookeeper-logs:
+  kafka-data:
+  postgres-data:
+  redis-data:
