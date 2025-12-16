@@ -63,6 +63,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/kafka/tsconfig.lib.json"
       }
+    },
+    "tickets-service": {
+      "type": "application",
+      "root": "apps/tickets-service",
+      "entryFile": "main",
+      "sourceRoot": "apps/tickets-service/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/tickets-service/tsconfig.app.json"
+      }
     }
   }
 }
