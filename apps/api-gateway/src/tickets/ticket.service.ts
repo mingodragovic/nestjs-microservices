@@ -2,6 +2,7 @@ import {
   CheckInTicketDto,
   PurchaseTicketDto,
   SERVICES_PORTS,
+  TicketResponse,
 } from '@app/common';
 import { HttpService } from '@nestjs/axios';
 import { HttpException, Injectable } from '@nestjs/common';
@@ -13,10 +14,48 @@ export class TicketService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async purchase(data: PurchaseTicketDto, userId: string) {
+  async purchase(
+    data: PurchaseTicketDto,
+    userId: string,
+  ): Promise<TicketResponse[]> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${this.ticketServiceUrl}/purchase`, data, {
+        this.httpService.post<TicketResponse[]>(
+          `${this.ticketServiceUrl}/purchase`,
+          data,
+          {
+            headers: { 'x-user-id': userId },
+          },
+        ),
+      );
+
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async findMyTickets(userId: string): Promise<TicketResponse[]> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<TicketResponse[]>(
+          `${this.ticketServiceUrl}/my-tickets`,
+          {
+            headers: { 'x-user-id': userId },
+          },
+        ),
+      );
+
+      return response.data;
+    } catch (error) {
+      this.handleError(error);
+    }
+  }
+
+  async findOne(id: string, userId: string): Promise<TicketResponse> {
+    try {
+      const response = await firstValueFrom(
+        this.httpService.get<TicketResponse>(`${this.ticketServiceUrl}/${id}`, {
           headers: { 'x-user-id': userId },
         }),
       );
@@ -27,38 +66,10 @@ export class TicketService {
     }
   }
 
-  async findMyTickets(userId: string) {
+  async cancel(id: string, userId: string): Promise<TicketResponse> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.ticketServiceUrl}/my-tickets`, {
-          headers: { 'x-user-id': userId },
-        }),
-      );
-
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  async findOne(id: string, userId: string) {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.get(`${this.ticketServiceUrl}/${id}`, {
-          headers: { 'x-user-id': userId },
-        }),
-      );
-
-      return response.data;
-    } catch (error) {
-      this.handleError(error);
-    }
-  }
-
-  async cancel(id: string, userId: string) {
-    try {
-      const response = await firstValueFrom(
-        this.httpService.post(
+        this.httpService.post<TicketResponse>(
           `${this.ticketServiceUrl}/${id}/cancel`,
           {},
           { headers: { 'x-user-id': userId } },
@@ -70,12 +81,19 @@ export class TicketService {
     }
   }
 
-  async checkIn(data: CheckInTicketDto, organizerId: string) {
+  async checkIn(
+    data: CheckInTicketDto,
+    organizerId: string,
+  ): Promise<TicketResponse> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${this.ticketServiceUrl}/check-in`, data, {
-          headers: { 'x-user-id': organizerId },
-        }),
+        this.httpService.post<TicketResponse>(
+          `${this.ticketServiceUrl}/check-in`,
+          data,
+          {
+            headers: { 'x-user-id': organizerId },
+          },
+        ),
       );
       return response.data;
     } catch (error) {
@@ -83,12 +101,18 @@ export class TicketService {
     }
   }
 
-  async findEventTickets(eventId: string, organizerId: string) {
+  async findEventTickets(
+    eventId: string,
+    organizerId: string,
+  ): Promise<TicketResponse[]> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.ticketServiceUrl}/event/${eventId}`, {
-          headers: { 'x-user-id': organizerId },
-        }),
+        this.httpService.get<TicketResponse[]>(
+          `${this.ticketServiceUrl}/event/${eventId}`,
+          {
+            headers: { 'x-user-id': organizerId },
+          },
+        ),
       );
       return response.data;
     } catch (error) {

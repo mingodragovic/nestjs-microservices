@@ -1,7 +1,7 @@
 import { Injectable, HttpException } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { SERVICES_PORTS } from '@app/common';
+import { AuthResponse, SERVICES_PORTS, UserProfileResponse } from '@app/common';
 
 @Injectable()
 export class AuthService {
@@ -9,10 +9,17 @@ export class AuthService {
 
   constructor(private readonly httpService: HttpService) {}
 
-  async register(data: { email: string; password: string; name: string }) {
+  async register(data: {
+    email: string;
+    password: string;
+    name: string;
+  }): Promise<UserProfileResponse> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${this.authServiceUrl}/register`, data),
+        this.httpService.post<UserProfileResponse>(
+          `${this.authServiceUrl}/register`,
+          data,
+        ),
       );
 
       return response.data;
@@ -21,10 +28,16 @@ export class AuthService {
     }
   }
 
-  async login(data: { email: string; password: string }) {
+  async login(data: {
+    email: string;
+    password: string;
+  }): Promise<AuthResponse> {
     try {
       const response = await firstValueFrom(
-        this.httpService.post(`${this.authServiceUrl}/login`, data),
+        this.httpService.post<AuthResponse>(
+          `${this.authServiceUrl}/login`,
+          data,
+        ),
       );
 
       return response.data;
@@ -33,12 +46,15 @@ export class AuthService {
     }
   }
 
-  async getProfile(token: string) {
+  async getProfile(token: string): Promise<UserProfileResponse> {
     try {
       const response = await firstValueFrom(
-        this.httpService.get(`${this.authServiceUrl}/profile`, {
-          headers: { Authorization: token },
-        }),
+        this.httpService.get<UserProfileResponse>(
+          `${this.authServiceUrl}/profile`,
+          {
+            headers: { Authorization: token },
+          },
+        ),
       );
 
       return response.data;
