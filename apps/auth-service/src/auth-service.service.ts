@@ -50,6 +50,7 @@ export class AuthServiceService implements OnModuleInit {
     this.kafkClient.emit(KAFKA_TOPICS.USER_REGISTERED, {
       userId: user.id,
       email: user.email,
+      name: user.name,
       timestamp: new Date().toISOString(),
     });
 

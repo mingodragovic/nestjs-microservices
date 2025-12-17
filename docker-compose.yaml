@@ -70,7 +70,7 @@ services:
   # Redis (for caching/sessions - optional)
   redis:
     image: redis:7-alpine
-    container_name: eventflow-redis
+    container_name: eventflowapp-redis
     ports:
       - "6379:6379"
     volumes:
@@ -83,7 +83,7 @@ services:
   # Mailhog (email testing)
   mailhog:
     image: mailhog/mailhog:latest
-    container_name: eventflow-mailhog
+    container_name: eventflowapp-mailhog
     ports:
       - "1025:1025" # SMTP server
       - "8025:8025" # Web UI
