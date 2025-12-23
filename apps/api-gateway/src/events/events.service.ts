@@ -10,7 +10,9 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class EventsService {
-  private readonly eventServiceUrl = `http://localhost:${SERVICES_PORTS.EVENTS_SERVICE}`;
+  private readonly eventServiceUrl =
+    process.env.EVENTS_SERVICE_URL ||
+    `http://localhost:${SERVICES_PORTS.EVENTS_SERVICE}`;
 
   constructor(private readonly httpService: HttpService) {}
 

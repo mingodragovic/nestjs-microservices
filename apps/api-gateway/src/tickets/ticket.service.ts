@@ -10,7 +10,9 @@ import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class TicketService {
-  private readonly ticketServiceUrl = `http://localhost:${SERVICES_PORTS.TICKETS_SERVICE}`;
+  private readonly ticketServiceUrl =
+    process.env.TICKETS_SERVICE_URL ||
+    `http://localhost:${SERVICES_PORTS.TICKETS_SERVICE}`;
 
   constructor(private readonly httpService: HttpService) {}
 

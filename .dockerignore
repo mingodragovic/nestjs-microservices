@@ -1,0 +1,38 @@
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test files
+*.spec.ts
+test
+coverage
+
+# Documentation
+docs
+*.md
+!README.md
+
+# Environment files
+.env
+.env.*
+
+# Misc
+.DS_Store
+Thumbs.db

@@ -5,7 +5,9 @@ import { AuthResponse, SERVICES_PORTS, UserProfileResponse } from '@app/common';
 
 @Injectable()
 export class AuthService {
-  private readonly authServiceUrl = `http://localhost:${SERVICES_PORTS.AUTH_SERVICE}`;
+  private readonly authServiceUrl =
+    process.env.AUTH_SERVICE_URL ||
+    `http://localhost:${SERVICES_PORTS.AUTH_SERVICE}`;
 
   constructor(private readonly httpService: HttpService) {}
 

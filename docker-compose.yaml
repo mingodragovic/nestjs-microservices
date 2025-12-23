@@ -66,6 +66,11 @@ services:
       POSTGRES_DB: eventflowapp
     volumes:
       - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eventflowapp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Redis (for caching/sessions - optional)
   redis:
@@ -86,7 +91,119 @@ services:
     container_name: eventflowapp-mailhog
     ports:
       - "1025:1025" # SMTP server
-      - "8025:8025" # Web UI
+      - "8025:8025" # Web U
+
+
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: api-gateway
+    container_name: eventflowapp-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - EVENTS_SERVICE_URL=http://events-service:3002
+      - TICKETS_SERVICE_URL=http://tickets-service:3003
+      - JWT_SECRET=your_jwt_secret_key
+    depends_on:
+      auth-service:
+         condition: service_started
+      events-service:
+          condition: service_started
+      tickets-service:
+          condition: service_started
+    restart: unless-stopped
+
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: auth-service
+    container_name: eventflowapp-auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=postgres://eventflowapp:eventflow_password@postgres:5432/eventflowapp
+      - KAFKA_BROKER=kafka:29092
+      - JWT_SECRET=your_jwt_secret_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+  
+  events-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: events-service
+    container_name: eventflowapp-events-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=production
+      - PORT=3003
+      - DATABASE_URL=postgres://eventflowapp:eventflow_password@postgres:5432/eventflowapp
+      - KAFKA_BROKER=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+  
+  tickets-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: tickets-service
+    container_name: eventflowapp-tickets-service
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=production
+      - PORT=3004
+      - DATABASE_URL=postgres://eventflowapp:eventflow_password@postgres:5432/eventflowapp
+      - KAFKA_BROKER=kafka:29092
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+  
+  notifications-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SERVICE: notifications-service
+    container_name: eventflowapp-notifications-service
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=production
+      - PORT=3006
+      - DATABASE_URL=postgres://eventflowapp:eventflow_password@postgres:5432/eventflowapp
+      - KAFKA_BROKER=kafka:29092
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    restart: unless-stopped
+    
 
 volumes:
   zookeeper-data:
