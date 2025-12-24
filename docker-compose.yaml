@@ -111,6 +111,8 @@ services:
       - EVENTS_SERVICE_URL=http://events-service:3002
       - TICKETS_SERVICE_URL=http://tickets-service:3003
       - JWT_SECRET=your_jwt_secret_key
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     depends_on:
       auth-service:
          condition: service_started

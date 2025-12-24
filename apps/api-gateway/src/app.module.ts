@@ -7,6 +7,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { EventsModule } from './events/events.module';
 import { JwtStrategy } from 'apps/auth-service/src/jwt.strategy';
 import { TicketsModule } from './tickets/ticket.module';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedis } from './throttler-storage-redis';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -14,11 +17,32 @@ import { TicketsModule } from './tickets/ticket.module';
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secret',
     }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          name: 'default',
+          ttl: 60000,
+          limit: 10,
+        },
+      ],
+    }),
     AuthModule,
     EventsModule,
     TicketsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, JwtStrategy],
+  providers: [
+    AppService,
+    JwtStrategy,
+    ThrottlerStorageRedis,
+    {
+      provide: 'ThrottlerStorage',
+      useClass: ThrottlerStorageRedis,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
