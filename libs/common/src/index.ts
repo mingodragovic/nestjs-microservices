@@ -12,3 +12,6 @@ export * from './utils';
 
 // DTOs
 export * from './dto';
+
+// Interceptors
+export * from './interceptors';
