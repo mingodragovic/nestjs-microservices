@@ -15,3 +15,6 @@ export * from './dto';
 
 // Interceptors
 export * from './interceptors';
+
+// Filters
+export * from './filters';
