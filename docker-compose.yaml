@@ -111,6 +111,7 @@ services:
       - EVENTS_SERVICE_URL=http://events-service:3003
       - TICKETS_SERVICE_URL=http://tickets-service:3004
       - JWT_SECRET=your_jwt_secret_key
+      - INTERNAL_API_TOKEN=change_me_internal_token
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
@@ -130,13 +131,15 @@ services:
       args:
         SERVICE: auth-service
     container_name: eventflowapp-auth-service
-    ports:
-      - "3001:3001"
+    # Internal only: reachable from other containers, not from the host.
+    expose:
+      - "3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
       - DATABASE_URL=postgres://eventflowapp:eventflow_password@postgres:5432/eventflowapp
       - KAFKA_BROKER=kafka:29092
+      - INTERNAL_API_TOKEN=change_me_internal_token
       - JWT_SECRET=your_jwt_secret_key
     depends_on:
       postgres:
@@ -152,13 +155,15 @@ services:
       args:
         SERVICE: events-service
     container_name: eventflowapp-events-service
-    ports:
-      - "3003:3003"
+    # Internal only: reachable from other containers, not from the host.
+    expose:
+      - "3003"
     environment:
       - NODE_ENV=production
       - PORT=3003
       - DATABASE_URL=postgres://eventflowapp:eventflow_password@postgres:5432/eventflowapp
       - KAFKA_BROKER=kafka:29092
+      - INTERNAL_API_TOKEN=change_me_internal_token
     depends_on:
       postgres:
         condition: service_healthy
@@ -171,13 +176,15 @@ services:
       args:
         SERVICE: tickets-service
     container_name: eventflowapp-tickets-service
-    ports:
-      - "3004:3004"
+    # Internal only: reachable from other containers, not from the host.
+    expose:
+      - "3004"
     environment:
       - NODE_ENV=production
       - PORT=3004
       - DATABASE_URL=postgres://eventflowapp:eventflow_password@postgres:5432/eventflowapp
       - KAFKA_BROKER=kafka:29092
+      - INTERNAL_API_TOKEN=change_me_internal_token
     depends_on:
       postgres:
         condition: service_healthy
@@ -190,8 +197,9 @@ services:
       args:
         SERVICE: notifications-service
     container_name: eventflowapp-notifications-service
-    ports:
-      - "3006:3006"
+    # Internal only: reachable from other containers, not from the host.
+    expose:
+      - "3006"
     environment:
       - NODE_ENV=production
       - PORT=3006

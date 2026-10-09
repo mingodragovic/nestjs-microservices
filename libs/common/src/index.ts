@@ -18,3 +18,6 @@ export * from './interceptors';
 
 // Filters
 export * from './filters';
+
+// Guards
+export * from './guards';

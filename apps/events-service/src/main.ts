@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { EventsServiceModule } from './events-service.module';
 import { ValidationPipe } from '@nestjs/common';
-import { SERVICES_PORTS } from '@app/common';
+import { InternalAuthGuard, SERVICES_PORTS } from '@app/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(EventsServiceModule);
@@ -14,6 +14,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Only accept requests forwarded by the API gateway
+  app.useGlobalGuards(new InternalAuthGuard());
 
   await app.listen(SERVICES_PORTS.EVENTS_SERVICE);
   console.log(

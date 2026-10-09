@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AuthServiceModule } from './auth-service.module';
-import { SERVICES_PORTS } from '@app/common';
+import { InternalAuthGuard, SERVICES_PORTS } from '@app/common';
 import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
@@ -14,6 +14,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+
+  // Only accept requests forwarded by the API gateway
+  app.useGlobalGuards(new InternalAuthGuard());
 
   await app.listen(SERVICES_PORTS.AUTH_SERVICE);
   console.log(`Auth Service is running on port ${SERVICES_PORTS.AUTH_SERVICE}`);
