@@ -108,8 +108,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - AUTH_SERVICE_URL=http://auth-service:3001
-      - EVENTS_SERVICE_URL=http://events-service:3002
-      - TICKETS_SERVICE_URL=http://tickets-service:3003
+      - EVENTS_SERVICE_URL=http://events-service:3003
+      - TICKETS_SERVICE_URL=http://tickets-service:3004
       - JWT_SECRET=your_jwt_secret_key
       - REDIS_HOST=redis
       - REDIS_PORT=6379
