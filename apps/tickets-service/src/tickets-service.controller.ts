@@ -18,8 +18,9 @@ export class TicketsServiceController {
   purchase(
     @Body() purchaseDto: PurchaseTicketDto,
     @Headers('x-user-id') userId: string,
+    @Headers('x-user-email') userEmail: string,
   ) {
-    return this.ticketsServiceService.purchase(purchaseDto, userId);
+    return this.ticketsServiceService.purchase(purchaseDto, userId, userEmail);
   }
 
   @Get('my-tickets')
@@ -39,8 +40,9 @@ export class TicketsServiceController {
   cancel(
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('x-user-id') userId: string,
+    @Headers('x-user-email') userEmail: string,
   ) {
-    return this.ticketsServiceService.cancel(id, userId);
+    return this.ticketsServiceService.cancel(id, userId, userEmail);
   }
 
   @Post('check-in')

@@ -30,7 +30,11 @@ export class TicketsServiceService implements OnModuleInit {
     return randomBytes(6).toString('hex').toUpperCase();
   }
 
-  async purchase(purchaseDto: PurchaseTicketDto, userId: string) {
+  async purchase(
+    purchaseDto: PurchaseTicketDto,
+    userId: string,
+    userEmail: string,
+  ) {
     const { eventId, quantity } = purchaseDto;
 
     // The capacity check and the insert must happen in one transaction that
@@ -92,7 +96,9 @@ export class TicketsServiceService implements OnModuleInit {
     this.kafkClient.emit(KAFKA_TOPICS.TICKET_PURCHASED, {
       ticketId: ticket.id,
       eventId: ticket.eventId,
+      eventTitle: event.title,
       userId: ticket.userId,
+      email: userEmail,
       quantity: ticket.quantity,
       totalPrice: ticket.totalPrice,
       ticketCode: ticket.ticketCode,
@@ -167,7 +173,7 @@ export class TicketsServiceService implements OnModuleInit {
     return ticket;
   }
 
-  async cancel(id: string, userId: string) {
+  async cancel(id: string, userId: string, userEmail: string) {
     const [ticket] = await this.dbService.db
       .select()
       .from(tickets)
@@ -207,6 +213,7 @@ export class TicketsServiceService implements OnModuleInit {
       ticketId: cancelled.id,
       eventId: cancelled.eventId,
       userId: cancelled.userId,
+      email: userEmail,
       timestamp: new Date().toISOString(),
     });
 

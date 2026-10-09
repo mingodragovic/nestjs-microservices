@@ -20,9 +20,13 @@ export class TicketController {
   @Post('purchase')
   purchase(
     @Body() purchaseDto: PurchaseTicketDto,
-    @Request() req: { user: { userId: string } },
+    @Request() req: { user: { userId: string; email: string } },
   ) {
-    return this.ticketsService.purchase(purchaseDto, req.user.userId);
+    return this.ticketsService.purchase(
+      purchaseDto,
+      req.user.userId,
+      req.user.email,
+    );
   }
 
   @Get('my-tickets')
@@ -41,9 +45,9 @@ export class TicketController {
   @Post(':id/cancel')
   cancel(
     @Param('id', ParseUUIDPipe) id: string,
-    @Request() req: { user: { userId: string } },
+    @Request() req: { user: { userId: string; email: string } },
   ) {
-    return this.ticketsService.cancel(id, req.user.userId);
+    return this.ticketsService.cancel(id, req.user.userId, req.user.email);
   }
 
   @Post('check-in')

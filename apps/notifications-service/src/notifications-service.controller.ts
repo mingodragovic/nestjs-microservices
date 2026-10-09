@@ -31,6 +31,8 @@ export class NotificationsServiceController {
       ticketId: string;
       ticketCode: string;
       userId: string;
+      email?: string;
+      eventTitle?: string;
       quantity: number;
       totalPrice: number;
     },
@@ -41,7 +43,7 @@ export class NotificationsServiceController {
 
   @EventPattern(KAFKA_TOPICS.TICKET_CANCELLED)
   async handleTicketCancelled(
-    @Payload() data: { ticketId: string; userId: string },
+    @Payload() data: { ticketId: string; userId: string; email?: string },
   ) {
     this.logger.log(
       `Received ticket cancellation event: ${JSON.stringify(data)}`,

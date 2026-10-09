@@ -19,6 +19,7 @@ export class TicketService {
   async purchase(
     data: PurchaseTicketDto,
     userId: string,
+    userEmail: string,
   ): Promise<TicketResponse[]> {
     try {
       const response = await firstValueFrom(
@@ -26,7 +27,7 @@ export class TicketService {
           `${this.ticketServiceUrl}/purchase`,
           data,
           {
-            headers: { 'x-user-id': userId },
+            headers: { 'x-user-id': userId, 'x-user-email': userEmail },
           },
         ),
       );
@@ -68,13 +69,17 @@ export class TicketService {
     }
   }
 
-  async cancel(id: string, userId: string): Promise<TicketResponse> {
+  async cancel(
+    id: string,
+    userId: string,
+    userEmail: string,
+  ): Promise<TicketResponse> {
     try {
       const response = await firstValueFrom(
         this.httpService.post<TicketResponse>(
           `${this.ticketServiceUrl}/${id}/cancel`,
           {},
-          { headers: { 'x-user-id': userId } },
+          { headers: { 'x-user-id': userId, 'x-user-email': userEmail } },
         ),
       );
       return response.data;

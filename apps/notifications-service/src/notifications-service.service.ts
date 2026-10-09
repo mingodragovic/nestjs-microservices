@@ -41,7 +41,14 @@ export class NotificationsServiceService {
     quantity: number;
     totalPrice: number;
   }) {
-    const email = data.email || 'user@example.com'; // Fallback for demo
+    // Never fall back to a placeholder address: skip and leave a trace instead.
+    if (!data.email) {
+      this.logger.warn(
+        `No email on ticket.purchased for ticket ${data.ticketCode}, skipping`,
+      );
+      return;
+    }
+    const email = data.email;
     this.logger.log(`Sending ticket confirmation to ${email}`);
 
     const html = `
@@ -64,7 +71,13 @@ export class NotificationsServiceService {
     userId: string;
     email?: string;
   }) {
-    const email = data.email || 'user@example.com';
+    if (!data.email) {
+      this.logger.warn(
+        `No email on ticket.cancelled for ticket ${data.ticketId}, skipping`,
+      );
+      return;
+    }
+    const email = data.email;
     this.logger.log(`Sending cancellation notice to ${email}`);
 
     const html = `
