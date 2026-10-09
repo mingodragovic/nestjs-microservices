@@ -12,6 +12,13 @@ import { ClientKafka } from '@nestjs/microservices';
 import { eq } from 'drizzle-orm';
 import * as bcrypt from 'bcrypt';
 
+// Postgres reports unique constraint violations with SQLSTATE 23505.
+// Drizzle wraps driver errors, so the code may sit on error.cause.
+function isUniqueViolation(error: unknown): boolean {
+  const err = error as { code?: string; cause?: { code?: string } };
+  return err?.code === '23505' || err?.cause?.code === '23505';
+}
+
 @Injectable()
 export class AuthServiceService implements OnModuleInit {
   constructor(
@@ -44,11 +51,21 @@ export class AuthServiceService implements OnModuleInit {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create user
-    const [user] = await this.dbService.db
-      .insert(users)
-      .values({ email, password: hashedPassword, name })
-      .returning();
+    // create user. The check above is only a fast path: two concurrent
+    // registrations can both pass it, so the unique constraint on email is
+    // the real guarantee and its violation is reported as a conflict too.
+    let user: typeof users.$inferSelect;
+    try {
+      [user] = await this.dbService.db
+        .insert(users)
+        .values({ email, password: hashedPassword, name })
+        .returning();
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        throw new ConflictException('User already exists');
+      }
+      throw error;
+    }
 
     // send user registered event
     this.kafkClient.emit(KAFKA_TOPICS.USER_REGISTERED, {
