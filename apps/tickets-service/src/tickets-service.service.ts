@@ -196,10 +196,10 @@ export class TicketsServiceService implements OnModuleInit {
       .select({
         id: tickets.id,
         status: tickets.status,
-        eventId: events.id,
-        quantity: tickets.quantity,
+        organizerId: events.organizerId,
       })
       .from(tickets)
+      .innerJoin(events, eq(tickets.eventId, events.id))
       .where(eq(tickets.ticketCode, ticketCode))
       .limit(1);
 
@@ -207,13 +207,7 @@ export class TicketsServiceService implements OnModuleInit {
       throw new NotFoundException('Ticket not found');
     }
 
-    const [event] = await this.dbService.db
-      .select()
-      .from(events)
-      .where(eq(events.id, ticket.eventId))
-      .limit(1);
-
-    if (event.organizerId !== organizerId) {
+    if (ticket.organizerId !== organizerId) {
       throw new ForbiddenException(
         'You are not authorized to check in this ticket',
       );
