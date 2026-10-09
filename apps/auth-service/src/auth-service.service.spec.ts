@@ -103,5 +103,53 @@ describe('AuthServiceService', () => {
         service.register('fiston@withcodewise.com', 'securePassword', 'Fiston'),
       ).rejects.toThrow('User already exists');
     });
+
+    it('should throw ConflictException when a concurrent insert wins the race', async () => {
+      mockDbService.db.limit.mockReturnValueOnce([]);
+      // Drizzle wraps the driver error; the SQLSTATE sits on error.cause
+      mockDbService.db.returning.mockRejectedValueOnce(
+        Object.assign(new Error('Failed query'), {
+          cause: { code: '23505' },
+        }),
+      );
+
+      await expect(
+        service.register('fiston@withcodewise.com', 'securePassword', 'Fiston'),
+      ).rejects.toThrow('User already exists');
+    });
+  });
+
+  describe('login', () => {
+    it('should sign the user role into the JWT', async () => {
+      mockDbService.db.limit.mockReturnValueOnce([
+        {
+          id: 'user-id-123',
+          email: 'fiston@withcodewise.com',
+          name: 'Fiston',
+          role: 'ORGANIZER',
+          password: 'hashed-password',
+        },
+      ]);
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
+
+      await service.login('fiston@withcodewise.com', 'securePassword');
+
+      expect(mockJwtService.sign).toHaveBeenCalledWith({
+        sub: 'user-id-123',
+        email: 'fiston@withcodewise.com',
+        role: 'ORGANIZER',
+      });
+    });
+
+    it('should reject a wrong password', async () => {
+      mockDbService.db.limit.mockReturnValueOnce([
+        { id: 'user-id-123', password: 'hashed-password' },
+      ]);
+      (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
+
+      await expect(
+        service.login('fiston@withcodewise.com', 'wrong'),
+      ).rejects.toThrow('Invalid credentials');
+    });
   });
 });
