@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ClientKafka } from '@nestjs/microservices';
 import { randomBytes } from 'crypto';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 
 @Injectable()
 export class TicketsServiceService implements OnModuleInit {
@@ -33,47 +33,61 @@ export class TicketsServiceService implements OnModuleInit {
   async purchase(purchaseDto: PurchaseTicketDto, userId: string) {
     const { eventId, quantity } = purchaseDto;
 
-    const [event] = await this.dbService.db
-      .select()
-      .from(events)
-      .where(eq(events.id, eventId))
-      .limit(1);
+    // The capacity check and the insert must happen in one transaction that
+    // holds a row lock on the event. Without it, two concurrent purchases can
+    // both read the same "remaining" count and together oversell the event.
+    const { event, ticket } = await this.dbService.db.transaction(
+      async (tx) => {
+        const [event] = await tx
+          .select()
+          .from(events)
+          .where(eq(events.id, eventId))
+          .limit(1)
+          .for('update');
 
-    if (!event) {
-      throw new NotFoundException('Event not found');
-    }
+        if (!event) {
+          throw new NotFoundException('Event not found');
+        }
 
-    if (event.status !== 'PUBLISHED') {
-      throw new BadRequestException('Event is not published');
-    }
+        if (event.status !== 'PUBLISHED') {
+          throw new BadRequestException('Event is not published');
+        }
 
-    const soldTickets = await this.dbService.db
-      .select({ total: sql<number>`COALESCE(SUM(${tickets.quantity}), 0)` })
-      .from(tickets)
-      .where(
-        and(eq(tickets.eventId, eventId), eq(tickets.status, 'CONFIRMED')),
-      );
+        // Checked-in tickets still occupy seats, so count them as sold too.
+        const soldTickets = await tx
+          .select({
+            total: sql<number>`COALESCE(SUM(${tickets.quantity}), 0)`,
+          })
+          .from(tickets)
+          .where(
+            and(
+              eq(tickets.eventId, eventId),
+              inArray(tickets.status, ['CONFIRMED', 'CHECKED_IN']),
+            ),
+          );
 
-    const currentSold = Number(soldTickets[0]?.total || 0);
-    const remaining = event.capacity - currentSold;
+        const currentSold = Number(soldTickets[0]?.total || 0);
+        const remaining = event.capacity - currentSold;
 
-    if (quantity > remaining) {
-      throw new BadRequestException(`Only ${remaining} tickets remaining`);
-    }
+        if (quantity > remaining) {
+          throw new BadRequestException(`Only ${remaining} tickets remaining`);
+        }
 
-    const totalPrice = event.price * quantity;
+        const [ticket] = await tx
+          .insert(tickets)
+          .values({
+            eventId,
+            userId,
+            quantity,
+            totalPrice: event.price * quantity,
+            ticketCode: this.generateTicketCode(),
+            status: 'CONFIRMED',
+          })
+          .returning();
 
-    const [ticket] = await this.dbService.db
-      .insert(tickets)
-      .values({
-        eventId,
-        userId,
-        quantity,
-        totalPrice,
-        ticketCode: this.generateTicketCode(),
-        status: 'CONFIRMED',
-      })
-      .returning();
+        return { event, ticket };
+      },
+    );
 
     this.kafkClient.emit(KAFKA_TOPICS.TICKET_PURCHASED, {
       ticketId: ticket.id,
