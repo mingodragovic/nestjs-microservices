@@ -5,7 +5,7 @@ import { AuthModule } from './auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { EventsModule } from './events/events.module';
-import { JwtStrategy } from 'apps/auth-service/src/jwt.strategy';
+import { JwtStrategy } from './jwt.strategy';
 import { TicketsModule } from './tickets/ticket.module';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { ThrottlerStorageRedis } from './throttler-storage-redis';
