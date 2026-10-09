@@ -3,6 +3,7 @@ import { DatabaseService, events, tickets } from '@app/database';
 import { KAFKA_SERVICE, KAFKA_TOPICS } from '@app/kafka';
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -178,8 +179,15 @@ export class TicketsServiceService implements OnModuleInit {
     const [cancelled] = await this.dbService.db
       .update(tickets)
       .set({ status: 'CANCELLED', updatedAt: new Date() })
-      .where(eq(tickets.id, id))
+      // Only a CONFIRMED ticket may be cancelled. Re-checking the status in the
+      // UPDATE makes the transition atomic: if a concurrent check-in or cancel
+      // wins the race, this statement matches zero rows.
+      .where(and(eq(tickets.id, id), eq(tickets.status, 'CONFIRMED')))
       .returning();
+
+    if (!cancelled) {
+      throw new ConflictException('Ticket status changed, please retry');
+    }
 
     this.kafkClient.emit(KAFKA_TOPICS.TICKET_CANCELLED, {
       ticketId: cancelled.id,
@@ -228,8 +236,12 @@ export class TicketsServiceService implements OnModuleInit {
         checkedInAt: new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(tickets.id, ticket.id))
+      .where(and(eq(tickets.id, ticket.id), eq(tickets.status, 'CONFIRMED')))
       .returning();
+
+    if (!checkedIn) {
+      throw new ConflictException('Ticket status changed, please retry');
+    }
 
     this.kafkClient.emit(KAFKA_TOPICS.TICKET_CHECKED_IN, {
       ticketId: checkedIn.id,
