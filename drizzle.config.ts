@@ -5,6 +5,8 @@ export default defineConfig({
   out: './drizzle/migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: 'postgresql://eventflowapp:eventflow_password@localhost:5432/eventflowapp?schema=public',
+    url:
+      process.env.DATABASE_URL ||
+      'postgresql://eventflowapp:eventflow_password@localhost:5432/eventflowapp?schema=public',
   },
 });
