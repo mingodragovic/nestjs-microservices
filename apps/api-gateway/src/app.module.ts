@@ -17,7 +17,10 @@ import { APP_GUARD } from '@nestjs/core';
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secret',
     }),
+    // The guard resolves its store by the ThrottlerStorage Symbol token, so a
+    // custom store must be passed here rather than registered as a provider.
     ThrottlerModule.forRoot({
+      storage: new ThrottlerStorageRedis(),
       throttlers: [
         {
           name: 'default',
@@ -34,11 +37,6 @@ import { APP_GUARD } from '@nestjs/core';
   providers: [
     AppService,
     JwtStrategy,
-    ThrottlerStorageRedis,
-    {
-      provide: 'ThrottlerStorage',
-      useClass: ThrottlerStorageRedis,
-    },
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
